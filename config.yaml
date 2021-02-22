@@ -1,0 +1,5 @@
+---
+logger:
+  level: debug
+http:
+  addr: :9090
