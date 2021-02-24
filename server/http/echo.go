@@ -21,6 +21,8 @@ func DefaultServer() *Server {
 		// 中间件
 		AddLoggerMiddleware("API"),
 		AddRecoverMiddleware(),
+		AddCORSMiddleware(),
+		AddJWTMiddleware(),
 		// 默认HTTP错误处理
 		WithHTTPErrorHandler(DefaultHTTPErrorHandlerFunc()),
 	)
@@ -58,6 +60,7 @@ func (s *Server) Serve() error {
 
 // Stop 关闭服务
 func (s *Server) Stop(ctx context.Context) error {
+	pig.Logger().Info("停止HTTP服务", zap.String("addr", s.addr))
 	return s.echo.Shutdown(ctx)
 }
 

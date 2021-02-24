@@ -21,8 +21,5 @@ func TestApp(t *testing.T) {
 	pig.Serve(httpServer)
 
 	// 运行
-	if err := pig.Run(); err != nil {
-		t.Error(err)
-		return
-	}
+	pig.Run()
 }

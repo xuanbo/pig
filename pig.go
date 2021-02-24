@@ -1,12 +1,18 @@
 package pig
 
 import (
+	"context"
 	"fmt"
+	"net/http"
+	"os"
+	"os/signal"
 	"sync"
 
 	"github.com/xuanbo/pig/config"
 	"github.com/xuanbo/pig/logger"
 	"github.com/xuanbo/pig/server"
+
+	"go.uber.org/zap"
 )
 
 var (
@@ -75,31 +81,44 @@ func initialize(options ...Option) *App {
 }
 
 // Serve 注册HTTP服务
-func Serve(server server.Server) {
-	Initialize()
-	app.servers = append(app.servers, server)
+func Serve(servers ...server.Server) {
+	app.servers = append(app.servers, servers...)
 }
 
 // Run 运行
-func Run() error {
-	Initialize()
-	defer app.logger.Flush()
+func Run() {
+	defer app.logger.Sync()
+	startServer()
+	q := make(chan os.Signal)
+	signal.Notify(q, os.Interrupt, os.Kill)
+	<-q
+	stopServer()
+}
+
+func startServer() {
+	for _, s := range app.servers {
+		go func(server server.Server) {
+			if err := server.Serve(); err != nil && err != http.ErrServerClosed {
+				app.logger.Error("服务运行错误", zap.Error(err))
+			}
+		}(s)
+	}
+}
+
+func stopServer() {
 	for _, server := range app.servers {
-		if err := server.Serve(); err != nil {
-			return err
+		if err := server.Stop(context.TODO()); err != nil {
+			app.logger.Error("服务停止错误", zap.Error(err))
 		}
 	}
-	return nil
 }
 
 // Config 配置实例
 func Config() *config.Config {
-	Initialize()
 	return app.config
 }
 
 // Logger logger实例
 func Logger() *logger.Logger {
-	Initialize()
 	return app.logger
 }

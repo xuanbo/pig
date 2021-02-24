@@ -9,6 +9,7 @@ pig is a standalone web framework
 - logger（zap）
 - config（viper）
 - http（echo）
+- orm（gorm）
 
 ## Install
 

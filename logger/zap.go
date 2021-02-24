@@ -23,32 +23,7 @@ const (
 
 // Logger 日志
 type Logger struct {
-	Zap *zap.Logger
-}
-
-// Flush 刷新缓存，程序退出前调用
-func (logger *Logger) Flush() error {
-	return logger.Zap.Sync()
-}
-
-// Debug 输出DEBUG级别日志
-func (logger *Logger) Debug(msg string, fields ...zapcore.Field) {
-	logger.Zap.Debug(msg, fields...)
-}
-
-// Info 输出INFO级别日志
-func (logger *Logger) Info(msg string, fields ...zapcore.Field) {
-	logger.Zap.Info(msg, fields...)
-}
-
-// Warn 输出WARN级别日志
-func (logger *Logger) Warn(msg string, fields ...zapcore.Field) {
-	logger.Zap.Warn(msg, fields...)
-}
-
-// Error 输出ERROR级别日志
-func (logger *Logger) Error(msg string, fields ...zapcore.Field) {
-	logger.Zap.Error(msg, fields...)
+	*zap.Logger
 }
 
 // New 创建日志

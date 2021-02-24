@@ -8,7 +8,7 @@ import (
 
 // Config 配置
 type Config struct {
-	viper *viper.Viper
+	*viper.Viper
 }
 
 // New 创建配置
@@ -26,14 +26,4 @@ func New() *Config {
 		panic(err)
 	}
 	return &Config{viper}
-}
-
-// GetInt 获取配置
-func (c *Config) GetInt(key string) int {
-	return c.viper.GetInt(key)
-}
-
-// GetString 获取配置
-func (c *Config) GetString(key string) string {
-	return c.viper.GetString(key)
 }

@@ -36,6 +36,20 @@ func AddRecoverMiddleware() Option {
 	}
 }
 
+// AddCORSMiddleware 添加跨域中间件
+func AddCORSMiddleware() Option {
+	return func(s *Server) {
+		s.echo.Use(middleware.NewCORS())
+	}
+}
+
+// AddJWTMiddleware 添加jwt中间件
+func AddJWTMiddleware() Option {
+	return func(s *Server) {
+		s.echo.Use(middleware.NewJWT())
+	}
+}
+
 // WithAddr 配置监听地址
 func WithAddr(addr string) Option {
 	return func(s *Server) {

@@ -9,3 +9,10 @@ func WithHideBanner(hideBanner bool) Option {
 		app.hideBanner = hideBanner
 	}
 }
+
+// WithBanner 设置banner
+func WithBanner(banner string) Option {
+	return func(app *App) {
+		app.banner = banner
+	}
+}

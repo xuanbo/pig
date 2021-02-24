@@ -3,3 +3,35 @@ logger:
   level: debug
 http:
   addr: :9090
+  # 跨域
+  cors:
+    allowOrigins:
+      - '*'
+    allowHeaders:
+      - Accept
+      - Authorization
+      - Content-Type
+      - Origin
+    allowMethods:
+      - GET
+      - POST
+      - PUT
+      - DELETE
+    allowCredentials: false
+    maxAge: 3600
+  # jwt token
+  jwt:
+    secret: secret
+    skipPaths:
+      - /v1/user/login
+mysql:
+  dns: root:123456@tcp(127.0.0.1:3306)/pig?charset=utf8&parseTime=True&loc=Local
+  # 数据库连接池
+  pool:
+    maxIdleConns: 4
+    maxOpenConns: 32
+    connMaxLifetime: 1m
+    sql:
+      # 慢SQL
+      slowThreshold: 200ms
+    
