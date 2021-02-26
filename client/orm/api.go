@@ -125,25 +125,8 @@ func (a *API) Count(ctx context.Context, cond interface{}, entity interface{}) (
 // 使用：Page(ctx, &emailCondition, &pagination, &emails)
 // 使用：Page(ctx, clause, &pagination, &emails)
 func (a *API) Page(ctx context.Context, cond interface{}, pagination *model.Pagination, entities interface{}) error {
-	var (
-		offset = pagination.Offset
-		size   = pagination.Size
-		total  int64
-		err    error
-	)
 	if cond == nil {
-		if err = a.WithContext(ctx).Model(entities).Count(&total).Error; err != nil {
-			return err
-		}
-		if total == 0 {
-			pagination.Total = 0
-			return nil
-		}
-		if err := a.WithContext(ctx).Offset(offset).Limit(size).Find(entities).Error; err != nil {
-			return err
-		}
-		pagination.Set(total, entities)
-		return nil
+		return a.page(ctx, pagination, entities)
 	}
 	var (
 		clause condition.Clause
@@ -154,50 +137,80 @@ func (a *API) Page(ctx context.Context, cond interface{}, pagination *model.Pagi
 	}
 	s, v := a.dialect.ParseClause(clause)
 	if s == "" {
-		if err = a.WithContext(ctx).Model(entities).Count(&total).Error; err != nil {
-			return err
-		}
-		if total == 0 {
-			pagination.Total = 0
-			return nil
-		}
-		if err = a.WithContext(ctx).Offset(offset).Limit(size).Find(entities).Error; err != nil {
-			return err
-		}
-		pagination.Set(total, entities)
-		return nil
+		return a.page(ctx, pagination, entities)
 	}
 	switch clause.Type() {
 	case "single":
-		if err = a.WithContext(ctx).Model(entities).Where(s, v).Count(&total).Error; err != nil {
-			return err
-		}
-		if total == 0 {
-			pagination.Total = 0
-			return nil
-		}
-		if err = a.WithContext(ctx).Where(s, v).Offset(offset).Limit(size).Find(entities).Error; err != nil {
-			return err
-		}
-		pagination.Set(total, entities)
-		return nil
+		return a.pageSingleClause(ctx, pagination, s, v, entities)
 	case "combine":
 		args := v.([]interface{})
-		if err = a.WithContext(ctx).Model(entities).Where(s, args...).Count(&total).Error; err != nil {
-			return err
-		}
-		if total == 0 {
-			pagination.Total = 0
-			return nil
-		}
-		if err = a.WithContext(ctx).Where(s, args...).Offset(offset).Limit(size).Find(entities).Error; err != nil {
-			return err
-		}
-		pagination.Set(total, entities)
-		return nil
+		return a.pageCombineClause(ctx, pagination, s, args, entities)
 	default:
 		return errors.New("orm: unsupport clause")
 	}
+}
+
+func (a *API) page(ctx context.Context, pagination *model.Pagination, entities interface{}) error {
+	var (
+		offset = pagination.Offset
+		size   = pagination.Size
+		total  int64
+		err    error
+	)
+	if err = a.WithContext(ctx).Model(entities).Count(&total).Error; err != nil {
+		return err
+	}
+	if total == 0 {
+		pagination.Total = 0
+		return nil
+	}
+	if err := a.WithContext(ctx).Offset(offset).Limit(size).Find(entities).Error; err != nil {
+		return err
+	}
+	pagination.Set(total, entities)
+	return nil
+}
+
+func (a *API) pageSingleClause(ctx context.Context, pagination *model.Pagination, query string, arg interface{}, entities interface{}) error {
+	var (
+		offset = pagination.Offset
+		size   = pagination.Size
+		total  int64
+		err    error
+	)
+	if err = a.WithContext(ctx).Model(entities).Where(query, arg).Count(&total).Error; err != nil {
+		return err
+	}
+	if total == 0 {
+		pagination.Total = 0
+		return nil
+	}
+	if err = a.WithContext(ctx).Where(query, arg).Offset(offset).Limit(size).Find(entities).Error; err != nil {
+		return err
+	}
+	pagination.Set(total, entities)
+	return nil
+}
+
+func (a *API) pageCombineClause(ctx context.Context, pagination *model.Pagination, query string, args []interface{}, entities interface{}) error {
+	var (
+		offset = pagination.Offset
+		size   = pagination.Size
+		total  int64
+		err    error
+	)
+	if err = a.WithContext(ctx).Model(entities).Where(query, args...).Count(&total).Error; err != nil {
+		return err
+	}
+	if total == 0 {
+		pagination.Total = 0
+		return nil
+	}
+	if err = a.WithContext(ctx).Where(query, args...).Offset(offset).Limit(size).Find(entities).Error; err != nil {
+		return err
+	}
+	pagination.Set(total, entities)
+	return nil
 }
 
 // DeleteByID 主键删除
