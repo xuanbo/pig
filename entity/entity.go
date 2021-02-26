@@ -1,6 +1,8 @@
 package entity
 
 import (
+	"errors"
+
 	"github.com/xuanbo/pig/util"
 
 	"gorm.io/gorm"
@@ -39,6 +41,9 @@ func (entity *Entity) BeforeUpdate(tx *gorm.DB) error {
 		if userID, ok := user.(string); ok {
 			entity.UpdatedBy = userID
 		}
+	}
+	if entity.ID == "" {
+		return errors.New("orm: 更新时未指定ID")
 	}
 	return nil
 }

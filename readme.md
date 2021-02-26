@@ -28,6 +28,17 @@ logger:
   level: debug
 http:
   addr: :9090
+datasource:
+  dialect: mysql
+  dns: root:123456@tcp(127.0.0.1:3306)/pig?charset=utf8&parseTime=True&loc=Local
+  # 数据库连接池
+  pool:
+    maxIdleConns: 4
+    maxOpenConns: 32
+    connMaxLifetime: 1m
+  sql:
+    # 慢SQL
+    slowThreshold: 200ms
 ```
 
 ### Example

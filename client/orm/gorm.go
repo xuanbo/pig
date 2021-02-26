@@ -1,60 +1,56 @@
 package orm
 
 import (
-	"context"
+	"errors"
 
 	"github.com/xuanbo/pig"
 
 	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
 
 // Client 数据库操作客户端
 type Client struct {
-	*gorm.DB
-}
-
-// FindByID 主键查询
-// 使用例子：FindByID(ctx, "1", &email)
-func (c *Client) FindByID(ctx context.Context, id string, entity interface{}) error {
-	return c.WithContext(ctx).Find(entity, id).Error
-}
-
-// FindByIDs 主键批量查询
-// 使用例子：FindByIDs(ctx, []string{"1", "2"}, &emails)
-func (c *Client) FindByIDs(ctx context.Context, ids []string, entity interface{}) error {
-	return c.WithContext(ctx).Find(entity, "id IN ?", ids).Error
-}
-
-// DeleteByID 主键删除
-// 使用例子：DeleteByID(ctx, "1", &Email{})
-func (c *Client) DeleteByID(ctx context.Context, id string, entity interface{}) error {
-	return c.WithContext(ctx).Delete(entity, id).Error
-}
-
-// DeleteByIDs 主键批量查询
-// 使用例子：DeleteByIDs(ctx, []string{"1", "2"}, &Email{})
-func (c *Client) DeleteByIDs(ctx context.Context, ids []string, entity interface{}) error {
-	return c.WithContext(ctx).Delete(entity, "id IN ?", ids).Error
+	DB      *gorm.DB
+	Dialect Dialect
+	API     *API
 }
 
 // New 创建
 func New() (*Client, error) {
 	var (
-		dns             = pig.Config().GetString("mysql.dns")
-		maxIdleConns    = pig.Config().GetInt("mysql.pool.maxIdleConns")
-		maxOpenConns    = pig.Config().GetInt("mysql.pool.maxOpenConns")
-		connMaxLifetime = pig.Config().GetDuration("mysql.pool.connMaxLifetime")
+		dialectStr      = pig.Config().GetString("datasource.dialect")
+		dns             = pig.Config().GetString("datasource.dns")
+		maxIdleConns    = pig.Config().GetInt("datasource.pool.maxIdleConns")
+		maxOpenConns    = pig.Config().GetInt("datasource.pool.maxOpenConns")
+		connMaxLifetime = pig.Config().GetDuration("datasource.pool.connMaxLifetime")
 
-		slowThreshold = pig.Config().GetDuration("mysql.sql.slowThreshold")
-		message       = pig.Config().GetString("mysql.sql.message")
+		slowThreshold = pig.Config().GetDuration("datasource.sql.slowThreshold")
+		message       = pig.Config().GetString("datasource.sql.message")
+
+		gormDB    *gorm.DB
+		dialector gorm.Dialector
+		dialect   Dialect
+		err       error
 	)
+	switch dialectStr {
+	case "mysql":
+		dialector = mysql.Open(dns)
+		dialect = MySQL
+	case "postgres":
+		dialector = postgres.Open(dns)
+		dialect = Postgres
+	default:
+		return nil, errors.New("配置 [datasource.dialect] 不合法，可选值: [mysql、postgres]")
+	}
+
 	if message == "" {
 		message = "Execute SQL"
 	}
 
-	gormDB, err := gorm.Open(mysql.Open(dns), &gorm.Config{
+	gormDB, err = gorm.Open(dialector, &gorm.Config{
 		Logger: &Logger{
 			SlowThreshold: slowThreshold,
 			Message:       message,
@@ -81,5 +77,9 @@ func New() (*Client, error) {
 		return nil, err
 	}
 
-	return &Client{gormDB}, nil
+	return &Client{
+		gormDB,
+		dialect,
+		&API{gormDB, dialect},
+	}, nil
 }
